@@ -3,6 +3,7 @@ import subprocess
 import sys
 import time
 import gradio as gr
+from PIL import Image
 from pathlib import Path
 
 # 添加项目根目录到Python路径
@@ -13,35 +14,91 @@ def process_single_image(image, mode):
     """
     处理单张上传的图片或PDF
     """
+    # 初始化pdf_filename变量
+    pdf_filename = None
+    
     if mode == "image":
         if image is None:
             return "请上传一张图片", None
 
         # 检查上传的文件是否为图片
-        if not hasattr(image, 'name') or not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-            return "请上传有效的图片文件 (png, jpg, jpeg, bmp, tiff)", None
+        if isinstance(image, dict) and 'name' in image:
+            # 处理文件上传的情况
+            if not image['name'].lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                return "请上传有效的图片文件 (png, jpg, jpeg, bmp, tiff)", None
+            
+            # 创建临时输入目录
+            temp_input_dir = "./temp"
+            os.makedirs(temp_input_dir, exist_ok=True)
 
-        # 创建临时输入目录
-        temp_input_dir = "./temp"
-        os.makedirs(temp_input_dir, exist_ok=True)
+            # 清空临时输入目录
+            for file in os.listdir(temp_input_dir):
+                file_path = os.path.join(temp_input_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
-        # 清空临时输入目录
-        for file in os.listdir(temp_input_dir):
-            file_path = os.path.join(temp_input_dir, file)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
+            # 保存上传的图片到temp目录
+            timestamp = int(time.time())
+            image_path = os.path.join(temp_input_dir, f"uploaded_image_{timestamp}.jpg")
+            
+            # 复制上传的图片文件
+            with open(image_path, "wb") as f:
+                with open(image['name'], "rb") as uploaded_file:
+                    f.write(uploaded_file.read())
+        elif isinstance(image, Image.Image):
+            # 处理直接绘制图像的情况
+            # 创建临时输入目录
+            temp_input_dir = "./temp"
+            os.makedirs(temp_input_dir, exist_ok=True)
 
-        # 保存上传的图片到temp目录
-        timestamp = int(time.time())
-        image_path = os.path.join(temp_input_dir, f"uploaded_image_{timestamp}.jpg")
-        image.save(image_path)
+            # 清空临时输入目录
+            for file in os.listdir(temp_input_dir):
+                file_path = os.path.join(temp_input_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
+            # 保存绘制的图片到temp目录
+            timestamp = int(time.time())
+            image_path = os.path.join(temp_input_dir, f"uploaded_image_{timestamp}.jpg")
+            image.save(image_path)
+        elif hasattr(image, 'name'):  # 处理其他可能的文件对象
+            # 检查文件扩展名
+            if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                return "请上传有效的图片文件 (png, jpg, jpeg, bmp, tiff)", None
+                
+            # 创建临时输入目录
+            temp_input_dir = "./temp"
+            os.makedirs(temp_input_dir, exist_ok=True)
+
+            # 清空临时输入目录
+            for file in os.listdir(temp_input_dir):
+                file_path = os.path.join(temp_input_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
+            # 保存上传的图片到temp目录
+            timestamp = int(time.time())
+            image_path = os.path.join(temp_input_dir, f"uploaded_image_{timestamp}.jpg")
+            
+            # 复制上传的图片文件
+            with open(image_path, "wb") as f:
+                with open(image.name, "rb") as uploaded_file:
+                    f.write(uploaded_file.read())
+        else:
+            return "请上传一张图片", None
 
     elif mode == "pdf":
         if image is None:
             return "请上传一个PDF文件", None
 
         # 检查上传的文件是否为PDF
-        if not hasattr(image, 'name') or not image.name.lower().endswith('.pdf'):
+        if isinstance(image, dict) and 'name' in image:
+            if not image['name'].lower().endswith('.pdf'):
+                return "请上传有效的PDF文件", None
+        elif hasattr(image, 'name'):
+            if not image.name.lower().endswith('.pdf'):
+                return "请上传有效的PDF文件", None
+        else:
             return "请上传有效的PDF文件", None
 
         # 创建临时输入目录
@@ -60,9 +117,14 @@ def process_single_image(image, mode):
         pdf_path = os.path.join(temp_input_dir, pdf_filename)
         
         # 复制上传的PDF文件
-        with open(pdf_path, "wb") as f:
-            with open(image.name, "rb") as uploaded_file:
-                f.write(uploaded_file.read())
+        if isinstance(image, dict) and 'name' in image:
+            with open(pdf_path, "wb") as f:
+                with open(image['name'], "rb") as uploaded_file:
+                    f.write(uploaded_file.read())
+        elif hasattr(image, 'name'):
+            with open(pdf_path, "wb") as f:
+                with open(image.name, "rb") as uploaded_file:
+                    f.write(uploaded_file.read())
 
     # 运行main.py进行推理
     try:
@@ -125,7 +187,7 @@ def process_single_image(image, mode):
 
         return markdown_content, result_image
 
-    elif mode == "pdf":
+    elif mode == "pdf" and pdf_filename:
         # 对于PDF模式，返回PDF文件名对应的输出目录路径
         pdf_name = Path(pdf_filename).stem
         pdf_output_dir = os.path.join(output_dir, pdf_name)
@@ -159,6 +221,8 @@ def process_single_image(image, mode):
             return message, None
         else:
             return f"未找到PDF处理结果，预期目录: {pdf_output_dir}", None
+    else:
+        return "处理过程中发生未知错误", None
 
 
 def process_batch(input_folder, output_folder, mode):

@@ -16,7 +16,7 @@
 
 1. 克隆项目代码：
 ```bash
-git clone https://github.com/RainYooSuki/DeepseekOCR-WebUI.git
+git clone <repository-url>
 cd DeepseekOCR-WebUI
 ```
 
@@ -28,8 +28,7 @@ pip install -r requirements.txt
 pip install flash-attn==2.7.3 --no-build-isolation
 ```
 
-3. 下载DeepseekOCR模型文件并放置在 `model` 文件夹中
-   [Huggingface DeepseekOCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR)
+3. 下载模型文件并放置在 `model` 文件夹中
 
 ## 目录结构
 
