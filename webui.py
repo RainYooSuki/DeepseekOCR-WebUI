@@ -114,8 +114,7 @@ def process_batch(input_folder, output_folder):
 
 
 with gr.Blocks(title="DeepSeek OCR WebUI") as demo:
-    gr.Markdown("# DeepSeek OCR 文档识别工具")
-    gr.Markdown("使用DeepSeek OCR模型将图片中的文档转换为Markdown格式")
+    gr.Markdown("# DeepSeek OCR WebUI")
 
     with gr.Tab("单张图片处理"):
         with gr.Row():

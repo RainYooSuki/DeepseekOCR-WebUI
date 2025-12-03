@@ -70,7 +70,7 @@ class DocumentOCR:
             save_results (bool): 是否保存结果到磁盘。
 
         Returns:
-            str: 模型返回的识别结果（markdown 或文本）。
+            str: 模型返回的识别结果（文本）。
         """
         result = self.model.infer(
             tokenizer=self.tokenizer,
@@ -95,7 +95,7 @@ def get_image_files(folder: str, extensions: tuple = ('.jpg', '.jpeg', '.png', '
     return sorted(image_files)  # 排序保证顺序一致
 
 
-def infer(input_folder, output_folder, model):
+def inference(input_folder, output_folder, model):
     try:
         image_files = get_image_files(folder=input_folder)
         print(f"Found {len(image_files)} images in {input_folder}")
@@ -145,4 +145,12 @@ def infer(input_folder, output_folder, model):
             continue
 
         if os.path.isfile(mmd_file):
-            os.rename(mmd_file, md_file)
+            # 检查目标文件是否已存在，如果存在则添加数字后缀
+            counter = 1
+            new_md_file = md_file
+            while os.path.exists(new_md_file):
+                name, ext = os.path.splitext(md_file)
+                new_md_file = f"{name}_{counter}{ext}"
+                counter += 1
+            
+            os.rename(mmd_file, new_md_file)
