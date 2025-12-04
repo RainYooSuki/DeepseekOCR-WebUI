@@ -17,7 +17,7 @@ class DocumentOCR:
         Args:
             model_path (str): 模型路径。
             device (str): 指定使用的设备，如 'cuda:0' 或 'cpu'。
-            attn_implementation (str): 注意力实现方式，可选 'flash_attention_2', 'sdpa', 'eager', 或 'auto'。
+            attn_implementation (str): 注意力实现方式，可选 'flash_attention_2', 'eager', 或 'auto'。
         """
         self.model_path = model_path
         self.device = device
